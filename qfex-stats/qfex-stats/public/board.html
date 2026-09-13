@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QFEX stats — quadro público</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#10151c; --panel:#161d26; --rule:#242e3a;
+  --ink:#e8edf3; --muted:#8494a5;
+  --up:#45b98a; --down:#e06a54; --brass:#c9a227;
+  --sans:"Instrument Sans",system-ui,sans-serif;
+  --serif:"Instrument Serif",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 72px}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:2px}
+
+.top{display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;justify-content:space-between;padding:22px 0 18px;border-bottom:1px solid var(--rule)}
+.brand{font-family:var(--mono);font-size:13px;letter-spacing:.06em;color:var(--muted)}
+.brand b{color:var(--ink);font-weight:500}
+.status{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex:none}
+.dot.live{background:var(--up)}
+.dot.sample{background:var(--brass)}
+
+.hero{padding:44px 0 30px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:40px;align-items:end}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5.2vw,58px);line-height:1.02;letter-spacing:-.015em;margin:0;max-width:15ch}
+h1 em{font-style:italic;color:var(--brass)}
+.lede{color:var(--muted);margin:16px 0 0;max-width:52ch;font-size:14.5px}
+.figures{display:flex;gap:32px;flex-wrap:wrap}
+.fig{min-width:96px}
+.fig .n{font-family:var(--mono);font-size:24px;line-height:1.1;display:block}
+.fig .k{font-size:12.5px;color:var(--muted);margin-top:5px;display:block}
+
+.tape{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);overflow-x:auto;scrollbar-width:thin;display:flex}
+.tape::-webkit-scrollbar{height:4px}
+.tape::-webkit-scrollbar-thumb{background:var(--rule)}
+.tick{flex:none;padding:12px 20px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:2px;min-width:132px}
+.tick .s{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.tick .p{font-family:var(--mono);font-size:16px}
+.tick .f{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:22px 0 14px}
+.seg{display:flex;border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.seg button{background:none;border:0;color:var(--muted);font-family:var(--mono);font-size:12.5px;padding:6px 13px;cursor:pointer;border-right:1px solid var(--rule)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink)}
+.seg button:hover{color:var(--ink)}
+.spacer{flex:1}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:3px;padding:0 10px;background:rgba(22,29,38,.5);color:var(--muted)}
+.search:focus-within{border-color:var(--brass);color:var(--ink)}
+.search input{background:none;border:0;color:var(--ink);font-family:var(--sans);font-size:13.5px;padding:7px 0;width:230px;outline:none}
+.search input::placeholder{color:var(--muted)}
+.search input::-webkit-search-cancel-button{display:none}
+.search button{background:none;border:0;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;padding:0 2px}
+.search button:hover{color:var(--ink)}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{text-align:right;font-weight:500;font-size:12.5px;color:var(--muted);padding:9px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+thead th:first-child,thead th:nth-child(2){text-align:left}
+tbody td{padding:11px 12px;border-bottom:1px solid rgba(36,46,58,.55);text-align:right;vertical-align:middle}
+tbody td:first-child,tbody td:nth-child(2){text-align:left}
+tbody tr:hover{background:rgba(22,29,38,.7)}
+.rk{font-family:var(--mono);color:var(--muted);font-size:13px;width:44px}
+.rk.top{color:var(--brass)}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.av{width:26px;height:26px;border-radius:50%;background:var(--panel);flex:none;object-fit:cover}
+.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.soc{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-decoration:none;flex:none;display:inline-flex;align-items:center;gap:4px;border-bottom:1px solid var(--rule);padding-bottom:1px}
+.soc:hover{color:var(--ink);border-color:var(--brass)}
+.soc.api{color:#9fb2c4;border-color:rgba(159,178,196,.4)}
+.soc.bio{border-bottom-style:dashed}
+.bio{display:block;color:var(--muted);font-size:12px;margin:2px 0 0 36px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34ch}
+.num{font-family:var(--mono);white-space:nowrap}
+.up{color:var(--up)}
+.down{color:var(--down)}
+.vol{color:#b9c6d3}
+.est{font-family:var(--sans);font-size:10.5px;color:var(--brass);opacity:.85}
+.eq{font-family:var(--mono);color:var(--muted);font-size:13px;white-space:nowrap}
+.bar{position:relative;width:120px;height:6px;background:rgba(36,46,58,.8);border-radius:1px;display:inline-block;vertical-align:middle}
+.bar i{position:absolute;top:0;bottom:0;border-radius:1px}
+.bar i.up{background:var(--up)}
+.bar i.down{background:var(--down)}
+.mid{position:absolute;top:-2px;bottom:-2px;left:50%;width:1px;background:var(--rule)}
+.empty{padding:34px 12px;color:var(--muted);text-align:left}
+.empty b{color:var(--ink);font-weight:500}
+
+.notice{border:1px solid var(--rule);border-left:2px solid var(--brass);background:var(--panel);padding:14px 16px;border-radius:3px;margin:18px 0 0;font-size:13.5px;color:var(--muted)}
+.notice b{color:var(--ink);font-weight:500}
+.notice code{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.notice button{margin-top:10px;background:none;border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:5px 12px;border-radius:3px;cursor:pointer}
+.notice button:hover{border-color:var(--brass)}
+.foot{margin-top:26px;color:var(--muted);font-size:12.5px;max-width:74ch}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr;gap:26px;align-items:start;padding:32px 0 24px}
+  .col-eq,.col-bar{display:none}
+  .search input{width:150px}
+}
+@media (prefers-reduced-motion:no-preference){tbody tr{transition:background .12s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <span class="brand"><b>QFEX stats</b> · quadro público não oficial</span>
+    <span class="status"><i class="dot" id="dot"></i><span id="statusText">carregando…</span></span>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1>Quem está ganhando dinheiro <em>enquanto a bolsa dorme</em></h1>
+      <p class="lede">Ranking das contas públicas da QFEX por resultado no período. Só aparece
+        quem marcou a conta como pública nas configurações da exchange.</p>
+    </div>
+    <div class="figures" id="figures"></div>
+  </section>
+
+  <div class="tape" id="tape"></div>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Período" id="segDuration">
+      <button data-v="1d" aria-pressed="false">1d</button>
+      <button data-v="1w" aria-pressed="true">1s</button>
+      <button data-v="1m" aria-pressed="false">1m</button>
+      <button data-v="all" aria-pressed="false">tudo</button>
+    </div>
+    <div class="seg" role="group" aria-label="Ordenação" id="segSort">
+      <button data-v="absolute" aria-pressed="true">PnL em US$</button>
+      <button data-v="percent" aria-pressed="false">retorno %</button>
+    </div>
+    <span class="spacer"></span>
+    <div class="search">
+      <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="none" stroke="currentColor"
+        stroke-width="2" d="M10.5 3a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15zM21 21l-5.2-5.2"/></svg>
+      <input id="q" type="search" placeholder="buscar por nome ou @handle" aria-label="Buscar trader"
+             autocomplete="off" spellcheck="false">
+      <button id="clearQ" type="button" aria-label="Limpar busca" hidden>×</button>
+    </div>
+  </div>
+
+  <div id="noticeSlot"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Trader</th>
+        <th class="col-bar">Magnitude</th>
+        <th>PnL</th>
+        <th>Retorno</th>
+        <th>Volume 7d <span class="est">est.</span></th>
+        <th class="col-eq">Equity inicial → final</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <p class="foot">
+    O handle do X só aparece quando o próprio trader o declarou: no campo que a QFEX devolve
+    (linha sólida) ou escrito na bio, como <code>@fulano</code> ou <code>x.com/fulano</code>
+    (linha tracejada). Bio sem handle fica sem link — nada é deduzido do nome de usuário.
+    Volume 7d é estimativa nossa: soma de preço × quantidade dos trades públicos de cada conta,
+    montada pelo cron a cada 6 horas. Cobre só quem tornou o perfil público, não a exchange
+    inteira — daí a fatia do tape visível lá em cima.
+  </p>
+
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   Três fontes, nesta ordem:
+     1. /api/board       — a rota deste projeto. É o caminho normal.
+     2. api.qfex.com     — tentativa direta, para abrir o arquivo solto.
+                           Costuma morrer em CORS; é fallback, não plano A.
+     3. dados de exemplo — para ver o layout sem nada no ar.
+------------------------------------------------------------------- */
+const BOARD_ROUTE = "/api/board";
+const QFEX_API = "https://api.qfex.com";
+
+const state = { duration: "1w", sort: "absolute", query: "", source: null };
+let rows = [], tape = [], coverage = null;
+
+/* ---------------- formatação ---------------- */
+const usd = n => {
+  const a = Math.abs(n), sg = n < 0 ? "-" : "+";
+  if (a >= 1e6) return sg + "$" + (a / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return sg + "$" + (a / 1e3).toFixed(1) + "K";
+  return sg + "$" + a.toFixed(0);
+};
+const plain = n => {
+  const a = Math.abs(n);
+  if (a >= 1e6) return "$" + (a / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return "$" + (a / 1e3).toFixed(1) + "K";
+  return "$" + a.toFixed(0);
+};
+const pct = n => (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------------- handle do X ----------------
+   Só o que o trader declarou. O teto de 15 caracteres e o alfabeto restrito
+   são regra do próprio X, e servem de validação: descartam e-mail e hashtag. */
+const X_KEYS = ["x_handle", "x_username", "twitter_handle", "twitter_username", "twitter", "x"];
+const BIO_URL = /(?:https?:\/\/)?(?:www\.)?(?:x|twitter)\.com\/@?([A-Za-z0-9_]{1,15})\b/i;
+const BIO_AT  = /(?:^|[^\w@./])@([A-Za-z0-9_]{1,15})\b/;
+
+const handleFromBio = bio => {
+  if (typeof bio !== "string" || !bio) return null;
+  const url = bio.match(BIO_URL); if (url) return url[1];
+  const at = bio.match(BIO_AT);   if (at) return at[1];
+  return null;
+};
+const handleFromFields = o => {
+  for (const k of X_KEYS) {
+    const v = o && o[k];
+    if (typeof v === "string" && v.trim()) {
+      return v.trim().replace(/^@/, "").replace(/^https?:\/\/(x|twitter)\.com\//i, "");
+    }
+  }
+  return null;
+};
+function socialFrom(account, bio) {
+  const f = handleFromFields(account);
+  if (f) return { handle: f, source: "api" };
+  const b = handleFromBio(bio);
+  if (b) return { handle: b, source: "bio" };
+  return null;
+}
+
+/* ---------------- normalização ----------------
+   As três fontes viram a mesma linha, para o render não saber de onde veio. */
+const unwrap = j => Array.isArray(j) ? j : (j && Array.isArray(j.data) ? j.data : []);
+const pick = (o, ...keys) => {
+  for (const k of keys) if (o[k] !== undefined && o[k] !== null && o[k] !== "") {
+    const n = Number(o[k]); if (Number.isFinite(n)) return n;
+  }
+  return null;
+};
+
+const rowFromRoute = r => ({
+  rank: r.rank,
+  username: r.account?.username || ("conta " + String(r.account?.account_id || "").slice(0, 6)),
+  avatar: r.account?.avatar_url || "",
+  bio: r.bio || null,
+  pnl: Number(r.pnl) || 0,
+  ret: Number(r.return_percent) || 0,
+  startEquity: Number(r.start_equity) || 0,
+  endEquity: Number(r.end_equity) || 0,
+  volume: r.volume ?? null,
+  social: r.social?.x ? { handle: r.social.x, source: r.social.source } : null
+});
+
+const rowFromQfex = (e, i) => ({
+  rank: e.rank ?? i + 1,
+  username: e.account?.username || ("conta " + String(e.account?.account_id || "").slice(0, 6)),
+  avatar: e.account?.avatar_url || "",
+  bio: e.account?.bio || null,
+  pnl: Number(e.pnl) || 0,
+  ret: Number(e.return_percent) || 0,
+  startEquity: Number(e.start_equity) || 0,
+  endEquity: Number(e.end_equity) || 0,
+  volume: null, // sem o cron não há volume
+  social: socialFrom(e.account, e.account?.bio)
+});
+
+const tapeFromRoute = t => ({
+  symbol: t.symbol, mark: t.mark, chg: t.change,
+  funding: t.funding, volume24h: t.volume24h
+});
+
+const tapeFromQfex = m => ({
+  symbol: m.symbol || m.ticker_id || m.ticker || "—",
+  mark: pick(m, "mark_price", "last_price", "mark", "index_price"),
+  chg: pick(m, "change_24h_percent", "price_change_percent_24h", "change_percent"),
+  funding: pick(m, "funding_rate", "next_funding_rate"),
+  volume24h: pick(m, "volume_24h_usd", "quote_volume_24h", "volume_24h", "target_volume")
+});
+
+/* ---------------- exemplo ---------------- */
+const SAMPLE_ROWS = [
+  ["vega_crushed",    41820,  38.4, 108900, "vol seller arrependido · @vegacrushed"],
+  ["tapefeeler",      33105,  12.1, 273600, "x.com/tapefeeler"],
+  ["nikkei_noite",    28470,  91.7,  31050, "só opero de madrugada"],
+  ["quietsize",       19980,   6.4, 312200, ""],
+  ["gamma_bandit",    17650,  44.2,  39930, "qfex bullish @gammabandit"],
+  ["roll_yield",      12240,   9.8, 124900, "contango é meu amigo"],
+  ["basis_only",       9870,   3.1, 318400, "carry e nada mais — @basisonly"],
+  ["silver_tongue",    8115,  27.6,  29400, ""],
+  ["mercado_frio",     6640,  18.9,  35150, "@mercadofrio no passarinho"],
+  ["late_tape",        5320,   7.7,  69080, ""],
+  ["oil_o_clock",      4185,  22.4,  18690, "CL e ouro, nada além"],
+  ["patient_size",     2960,   1.9, 155800, ""],
+  ["fx_after_hours",   1740,  11.2,  15540, "https://x.com/fxafterhours"],
+  ["carry_trader",      910,   2.6,  35000, ""],
+  ["delta_one_guy",    -430,  -1.1,  39100, "escreva para contato@exemplo.com"],
+  ["nvda_maximal",    -1880,  -8.4,  22380, "long e forte @nvdamaximal"],
+  ["short_the_open",  -3260, -14.7,  22180, ""],
+  ["stopped_out",     -5940, -31.5,  18860, "sem stop dessa vez #rekt"],
+  ["always_early",    -8720, -12.3,  70890, ""],
+  ["leveraged_lunch",-11400, -46.1,  13320, ""],
+  ["margin_call_me", -16250, -22.8,  55010, "@margincallme"],
+  ["ES_degen",       -24870, -37.9,  40730, ""]
+].map(([username, pnl, ret, endEquity, bio]) => {
+  let h = 0;
+  for (const ch of username) h = (h * 31 + ch.charCodeAt(0)) % 9973;
+  return {
+    rank: 0, username, avatar: "", bio: bio || null,
+    pnl, ret, endEquity, startEquity: endEquity - pnl,
+    volume: Math.round(endEquity * (4 + (h % 26))),
+    social: socialFrom(null, bio)
+  };
+});
+
+const SAMPLE_TAPE = [
+  ["AAPL-USD", 254.16,  0.42,  0.0011, 41200000],
+  ["NVDA-USD", 178.90, -1.24,  0.0043, 58900000],
+  ["SPX-USD",  6841.5,  0.18,  0.0004, 33400000],
+  ["XAU-USD",  4120.8,  0.96, -0.0008, 19700000],
+  ["CL-USD",    71.34, -0.51,  0.0019,  8300000],
+  ["TSLA-USD", 402.77,  2.13,  0.0067, 27100000],
+  ["EUR-USD",   1.0842, 0.07,  0.0002,  6050000]
+].map(([symbol, mark, chg, funding, volume24h]) => ({ symbol, mark, chg, funding, volume24h }));
+
+const sampleSorted = () => {
+  const key = state.sort === "percent" ? "ret" : "pnl";
+  return [...SAMPLE_ROWS].sort((a, b) => b[key] - a[key]).map((r, i) => ({ ...r, rank: i + 1 }));
+};
+
+/* ---------------- carga ---------------- */
+async function load() {
+  setStatus(null, "carregando…");
+
+  // 1. rota do projeto
+  try {
+    const r = await fetch(`${BOARD_ROUTE}?duration=${state.duration}&sort=${state.sort}`);
+    if (r.ok) {
+      const j = await r.json();
+      rows = (j.rows || []).map(rowFromRoute);
+      tape = (j.tickers || []).map(tapeFromRoute);
+      coverage = j.volumeSnapshot?.coverage ?? null;
+      state.source = "route";
+      clearNotice();
+      if (!j.volumeSnapshot) volumeNotice();
+      render();
+      return setStatus(true, "ao vivo · " + new Date().toLocaleTimeString("pt-BR"));
+    }
+  } catch { /* segue para a tentativa direta */ }
+
+  // 2. QFEX direto
+  try {
+    const [lb, mx] = await Promise.all([
+      fetch(`${QFEX_API}/public/leaderboard?duration=${state.duration}&sort=${state.sort}&limit=100`).then(r => r.ok ? r.json() : Promise.reject(r.status)),
+      fetch(`${QFEX_API}/symbols/metrics`).then(r => r.ok ? r.json() : Promise.reject(r.status))
+    ]);
+    rows = unwrap(lb).map(rowFromQfex);
+    tape = unwrap(mx).map(tapeFromQfex).filter(t => t.mark !== null).slice(0, 12);
+    coverage = null;
+    state.source = "qfex";
+    clearNotice();
+    render();
+    return setStatus(true, "direto da QFEX · sem volume");
+  } catch (err) {
+    // 3. exemplo
+    rows = sampleSorted();
+    tape = SAMPLE_TAPE;
+    coverage = null;
+    state.source = "sample";
+    sampleNotice(err);
+    render();
+    setStatus(false, "dados de exemplo");
+  }
+}
+
+function setStatus(live, text) {
+  const dot = document.getElementById("dot");
+  dot.className = "dot" + (live === true ? " live" : live === false ? " sample" : "");
+  document.getElementById("statusText").textContent = text;
+}
+const clearNotice = () => { document.getElementById("noticeSlot").innerHTML = ""; };
+
+function volumeNotice() {
+  document.getElementById("noticeSlot").innerHTML = `
+    <div class="notice"><b>Coluna de volume vazia.</b> O snapshot ainda não foi montado.
+      Rode <code>/api/cron/volume?probe=1&amp;secret=…</code> para conferir o diagnóstico e
+      depois <code>/api/cron/volume?secret=…</code> para gerar.</div>`;
+}
+
+function sampleNotice(err) {
+  document.getElementById("noticeSlot").innerHTML = `
+    <div class="notice"><b>Mostrando dados de exemplo.</b> Nem <code>/api/board</code> nem
+      <code>api.qfex.com</code> responderam (${esc(String(err))}). Abrindo o arquivo solto isso é
+      esperado: a chamada direta cai em CORS. Suba o projeto e a rota resolve.
+      <br><button id="retry">Tentar de novo</button></div>`;
+  document.getElementById("retry").onclick = load;
+}
+
+/* ---------------- render ---------------- */
+function render() {
+  document.getElementById("tape").innerHTML = tape.map(m => {
+    const cls = (m.chg ?? 0) >= 0 ? "up" : "down";
+    const chg = Number.isFinite(m.chg) ? `<span class="${cls}">${pct(m.chg)}</span>` : "";
+    const fnd = Number.isFinite(m.funding) ? `funding ${(m.funding * 100).toFixed(4)}%/h` : "";
+    return `<div class="tick">
+      <span class="s">${esc(m.symbol)}</span>
+      <span class="p">${Number(m.mark).toLocaleString("pt-BR", { maximumFractionDigits: 4 })} ${chg}</span>
+      <span class="f">${fnd}</span></div>`;
+  }).join("");
+
+  const winners = rows.filter(r => r.pnl > 0).length;
+  const net = rows.reduce((s, r) => s + r.pnl, 0);
+  const vol = rows.reduce((s, r) => s + (r.volume || 0), 0);
+  const venueWeek = tape.reduce((s, m) => s + (m.volume24h || 0), 0) * 7;
+  const cov = coverage !== null ? coverage * 100 : (venueWeek > 0 && vol > 0 ? (vol / venueWeek) * 100 : null);
+
+  document.getElementById("figures").innerHTML = `
+    <div class="fig"><span class="n">${rows.length}</span><span class="k">contas públicas</span></div>
+    <div class="fig"><span class="n">${winners}</span><span class="k">no lucro</span></div>
+    <div class="fig"><span class="n ${net >= 0 ? "up" : "down"}">${usd(net)}</span><span class="k">resultado somado</span></div>
+    ${vol > 0 ? `<div class="fig"><span class="n">${plain(vol)}</span><span class="k">volume 7d estimado</span></div>` : ""}
+    ${cov !== null ? `<div class="fig"><span class="n">${cov.toFixed(1)}%</span><span class="k">do tape visível</span></div>` : ""}`;
+
+  const q = state.query.trim().toLowerCase().replace(/^@/, "");
+  const shown = q
+    ? rows.filter(r => r.username.toLowerCase().includes(q)
+        || (r.social ? r.social.handle.toLowerCase().includes(q) : false))
+    : rows;
+
+  const body = document.getElementById("rows");
+  if (shown.length === 0) {
+    body.innerHTML = `<tr><td colspan="7" class="empty">
+      <b>Nenhum trader com “${esc(state.query)}”.</b> A busca cobre o nome de usuário e o handle
+      do X de quem colocou o handle na bio.</td></tr>`;
+    return;
+  }
+
+  const peak = Math.max(...shown.map(r => Math.abs(r.pnl)), 1);
+  const titles = { api: "handle vinculado na própria QFEX", bio: "handle escrito pelo trader na bio" };
+
+  body.innerHTML = shown.map(r => {
+    const cls = r.pnl >= 0 ? "up" : "down";
+    const w = (Math.abs(r.pnl) / peak) * 50;
+    const bar = r.pnl >= 0
+      ? `<i class="up" style="left:50%;width:${w}%"></i>`
+      : `<i class="down" style="left:${50 - w}%;width:${w}%"></i>`;
+    const avatar = r.avatar
+      ? `<img class="av" src="${esc(r.avatar)}" alt="" loading="lazy">`
+      : `<span class="av"></span>`;
+    const link = r.social
+      ? `<a class="soc ${r.social.source}" href="https://x.com/${encodeURIComponent(r.social.handle)}"
+            target="_blank" rel="noopener noreferrer" title="${titles[r.social.source] || ""}">
+           <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><path fill="currentColor"
+             d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.22-6.82-5.96 6.82H1.68l7.73-8.84L1.25 2.25h6.82l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.11z"/></svg>
+           ${esc(r.social.handle)}</a>`
+      : "";
+    const bio = r.bio ? `<span class="bio">${esc(String(r.bio).slice(0, 48))}</span>` : "";
+    return `<tr>
+      <td class="rk${r.rank <= 3 ? " top" : ""}">${String(r.rank).padStart(2, "0")}</td>
+      <td><span class="who">${avatar}<span class="nm">${esc(r.username)}</span>${link}</span>${bio}</td>
+      <td class="col-bar"><span class="bar"><span class="mid"></span>${bar}</span></td>
+      <td class="num ${cls}">${usd(r.pnl)}</td>
+      <td class="num ${cls}">${pct(r.ret)}</td>
+      <td class="num vol">${r.volume == null ? "—" : plain(r.volume)}</td>
+      <td class="eq col-eq">${plain(r.startEquity)} → ${plain(r.endEquity)}</td>
+    </tr>`;
+  }).join("");
+}
+
+/* ---------------- controles ---------------- */
+function wireSeg(id, key) {
+  document.getElementById(id).addEventListener("click", ev => {
+    const b = ev.target.closest("button"); if (!b) return;
+    [...ev.currentTarget.children].forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    state[key] = b.dataset.v;
+    load();
+  });
+}
+wireSeg("segDuration", "duration");
+wireSeg("segSort", "sort");
+
+const qInput = document.getElementById("q");
+const clearBtn = document.getElementById("clearQ");
+let qTimer;
+qInput.addEventListener("input", () => {
+  clearTimeout(qTimer);
+  clearBtn.hidden = qInput.value.length === 0;
+  qTimer = setTimeout(() => { state.query = qInput.value; render(); }, 120);
+});
+qInput.addEventListener("keydown", ev => {
+  if (ev.key === "Escape") { qInput.value = ""; qInput.dispatchEvent(new Event("input")); }
+});
+clearBtn.addEventListener("click", () => {
+  qInput.value = ""; qInput.dispatchEvent(new Event("input")); qInput.focus();
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "/" && document.activeElement !== qInput) { ev.preventDefault(); qInput.focus(); }
+});
+
+load();
+setInterval(load, 10 * 60 * 1000);
+</script>
+</body>
+</html>
